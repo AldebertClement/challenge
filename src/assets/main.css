@@ -1,0 +1,59 @@
+/* Typography */
+h1, h2, h3, h4, .v-toolbar__title, .section-title {
+    font-family: 'Cinzel', serif !important;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #C9A84C;
+}
+body, .v-application {
+    font-family: 'Crimson Text', serif !important;
+    font-size: 1.05rem;
+    background-color: #0E0C07;
+}
+
+/* Cards */
+.v-card {
+    border: 1px solid #3A3020 !important;
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.4), 0 4px 16px rgba(0,0,0,0.6) !important;
+}
+
+/* Ornamental divider */
+.ornament-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #C9A84C;
+    opacity: 0.5;
+}
+.ornament-divider::before,
+.ornament-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(to right, transparent, #C9A84C, transparent);
+}
+
+/* Progress bars styled as XP bars */
+.v-progress-linear__determinate {
+    background: linear-gradient(90deg, #8B6914, #C9A84C) !important;
+    border-radius: 4px !important;
+}
+
+/* Primary button bevel */
+.v-btn--variant-elevated.v-btn--color-primary {
+    box-shadow: 0 2px 8px rgba(201,168,76,0.5), inset 0 1px 0 rgba(255,255,255,0.1) !important;
+}
+
+/* Table header */
+.v-data-table thead th {
+    font-family: 'Cinzel', serif !important;
+    color: #C9A84C !important;
+    font-size: 0.8rem !important;
+    letter-spacing: 0.08em !important;
+    border-bottom: 1px solid #3A3020 !important;
+}
+
+/* ApexCharts theme override */
+.apexcharts-canvas {
+    background: transparent !important;
+}
