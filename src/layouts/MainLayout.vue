@@ -14,9 +14,9 @@
       </div>
 
       <v-list nav>
-        <v-list-item to="/" prepend-icon="mdi-castle" title="Dashboard" active-color="primary"></v-list-item>
-        <v-list-item to="/sport" prepend-icon="mdi-sword" title="Sport" active-color="primary"></v-list-item>
-        <v-list-item to="/english" prepend-icon="mdi-book-open-variant" title="English" active-color="primary"></v-list-item>
+        <v-list-item exact to="/" prepend-icon="mdi-castle" title="Dashboard" color="primary"></v-list-item>
+        <v-list-item exact to="/sport" prepend-icon="mdi-sword" title="Sport" color="primary"></v-list-item>
+        <v-list-item exact to="/english" prepend-icon="mdi-book-open-variant" title="English" color="primary"></v-list-item>
       </v-list>
 
       <template v-slot:append>
