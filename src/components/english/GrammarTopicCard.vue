@@ -1,0 +1,61 @@
+<template>
+  <v-card
+      hover
+      :class="['topic-card', { 'c2-mastered-glow': isC2Mastered }]"
+      @click="$emit('click', topic)"
+  >
+    <v-card-item>
+      <v-card-title class="text-primary font-weight-bold">{{ topic.title }}</v-card-title>
+      <v-card-subtitle>Mastery: {{ masteryScore }}/100</v-card-subtitle>
+    </v-card-item>
+
+    <v-card-text>
+      <p class="text-body-2 mb-2">{{ topic.description }}</p>
+      <v-chip
+          :color="isPassed ? 'success' : 'grey-darken-1'"
+          size="small"
+          class="mt-2 text-uppercase font-weight-bold"
+      >
+        {{ isPassed ? 'Mastered' : 'Uncharted' }}
+      </v-chip>
+    </v-card-text>
+  </v-card>
+</template>
+
+<script setup>
+import { computed } from 'vue'
+
+const props = defineProps({
+  topic: { type: Object, required: true }
+})
+defineEmits(['click'])
+
+const progress = computed(() => props.topic.grammar_progress?.[0] || {})
+const masteryScore = computed(() => progress.value.mastery_score || 0)
+const isPassed = computed(() => progress.value.passed || false)
+
+const isC2Mastered = computed(() => {
+  return props.topic.cefr_level === 'C2' && isPassed.value
+})
+</script>
+
+<style scoped>
+.topic-card {
+  border: 1px solid #8b6508;
+  background-color: #faf8f5;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+/* Glowing effect for C2 Mastery */
+.c2-mastered-glow {
+  box-shadow: 0 0 15px 5px rgba(255, 215, 0, 0.7) !important;
+  border: 2px solid #ffd700 !important;
+  animation: legendary-pulse 2s infinite alternate;
+}
+
+@keyframes legendary-pulse {
+  from { box-shadow: 0 0 10px 2px rgba(255, 215, 0, 0.5); }
+  to { box-shadow: 0 0 20px 8px rgba(255, 215, 0, 0.9); }
+}
+</style>
