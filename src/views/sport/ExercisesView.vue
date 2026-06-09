@@ -71,7 +71,7 @@
 import { ref, onMounted } from 'vue'
 import { useSportStore } from '@/stores/sport.store'
 import { useAuthStore } from '@/stores/auth.store'
-import { sportRules } from '@/validators'
+import { sportRules } from '@/utils/validators'
 import ExerciseCard from '@/components/sport/ExerciseCard.vue'
 
 const sportStore = useSportStore()

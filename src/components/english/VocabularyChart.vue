@@ -5,25 +5,26 @@
     </v-card-title>
     <v-card-text class="d-flex justify-center align-center">
       <div class="chart-wrapper" :style="{ height: chartHeight + 'px', width: '100%' }">
-        <Bar v-if="chartData.labels" :data="chartData" :options="chartOptions" />
-        <p v-else class="text-center font-italic mt-10">Unrolling parchment...</p>
+        <Bar v-if="chartData.labels && chartData.labels.length" :data="chartData" :options="chartOptions" />
+        <p v-else class="text-center font-italic mt-10">Unrolling parchment... No entries logged yet.</p>
       </div>
     </v-card-text>
   </v-card>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { computed } from 'vue'
 import { useDisplay } from 'vuetify'
 import { Bar } from 'vue-chartjs'
 import { Chart as ChartJS, Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale } from 'chart.js'
-import { supabase } from '@/supabase'
+import { useEnglishStore } from '@/stores/english.store'
 
 ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale)
 
+const store = useEnglishStore()
 const { smAndDown } = useDisplay()
 
-// Responsive logic based on rules
+// Responsive dimension rules
 const chartHeight = computed(() => smAndDown.value ? 280 : 400)
 
 const chartOptions = computed(() => ({
@@ -31,7 +32,7 @@ const chartOptions = computed(() => ({
   maintainAspectRatio: false,
   plugins: {
     legend: {
-      display: !smAndDown.value, // Hides legend on xs/sm
+      display: !smAndDown.value,
       labels: {
         font: { family: "'Crimson Text', serif", size: 14 },
         color: '#3e2723'
@@ -52,41 +53,26 @@ const chartOptions = computed(() => ({
   }
 }))
 
-const chartData = ref({})
+const chartData = computed(() => {
+  if (!store.vocabularyLogs || !store.vocabularyLogs.length) return {}
 
-const fetchData = async () => {
-  const { data, error } = await supabase
-      .from('vocabulary_logs')
-      .select('date, learned, reviewed')
-      .order('date', { ascending: false }) // Get latest first
-      .limit(7)
+  const latestLogs = [...store.vocabularyLogs].slice(0, 7).reverse()
 
-  if (!error && data) {
-    // Reverse to display chronologically left-to-right
-    const chronologicalData = data.reverse()
-
-    chartData.value = {
-      labels: chronologicalData.map(d => d.date),
-      datasets: [
-        {
-          label: 'Words Learned',
-          backgroundColor: '#8b5a2b', // Deep medieval brown
-          data: chronologicalData.map(d => d.learned)
-        },
-        {
-          label: 'Words Reviewed',
-          backgroundColor: '#d4af37', // Medieval Gold
-          data: chronologicalData.map(d => d.reviewed)
-        }
-      ]
-    }
+  return {
+    labels: latestLogs.map(d => d.date),
+    datasets: [
+      {
+        label: 'Words Learned',
+        backgroundColor: '#8b5a2b',
+        data: latestLogs.map(d => d.words_learned) // Matches store layout
+      },
+      {
+        label: 'Words Reviewed',
+        backgroundColor: '#d4af37',
+        data: latestLogs.map(d => d.words_reviewed) // Matches store layout
+      }
+    ]
   }
-}
-
-defineExpose({ fetchData })
-
-onMounted(() => {
-  fetchData()
 })
 </script>
 

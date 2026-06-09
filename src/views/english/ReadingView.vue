@@ -53,8 +53,8 @@
 import { computed, onMounted } from 'vue'
 import { useEnglishStore } from '@/stores/english.store'
 import { useAuthStore } from '@/stores/auth.store'
-import BookProgressCard from '@/components/BookProgressCard.vue'
-import ReadingLogForm from '@/components/ReadingLogForm.vue'
+import BookProgressCard from '@/components/english/BookProgressCard.vue'
+import ReadingLogForm from '@/components/english/ReadingLogForm.vue'
 
 const englishStore = useEnglishStore()
 const authStore = useAuthStore()

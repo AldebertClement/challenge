@@ -6,17 +6,17 @@
   >
     <v-card-item>
       <v-card-title class="text-primary font-weight-bold">{{ topic.title }}</v-card-title>
-      <v-card-subtitle>Mastery: {{ masteryScore }}/100</v-card-subtitle>
+      <v-card-subtitle>Mastery Score: {{ masteryScore }}/100</v-card-subtitle>
     </v-card-item>
 
     <v-card-text>
       <p class="text-body-2 mb-2">{{ topic.description }}</p>
       <v-chip
-          :color="isPassed ? 'success' : 'grey-darken-1'"
+          :color="isValidated ? 'success' : 'grey-darken-1'"
           size="small"
           class="mt-2 text-uppercase font-weight-bold"
       >
-        {{ isPassed ? 'Mastered' : 'Uncharted' }}
+        {{ isValidated ? 'Mastered' : 'Uncharted' }}
       </v-chip>
     </v-card-text>
   </v-card>
@@ -30,12 +30,11 @@ const props = defineProps({
 })
 defineEmits(['click'])
 
-const progress = computed(() => props.topic.grammar_progress?.[0] || {})
-const masteryScore = computed(() => progress.value.mastery_score || 0)
-const isPassed = computed(() => progress.value.passed || false)
+const masteryScore = computed(() => props.topic.progress?.mastery_score || 0)
+const isValidated = computed(() => props.topic.progress?.validated || false)
 
 const isC2Mastered = computed(() => {
-  return props.topic.cefr_level === 'C2' && isPassed.value
+  return props.topic.cefr_level === 'C2' && isValidated.value
 })
 </script>
 

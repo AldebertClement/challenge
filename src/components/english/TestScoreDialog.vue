@@ -12,7 +12,7 @@
               label="Score Obtained (0-100)"
               type="number"
               variant="outlined"
-              :rules="[v => (v >= 0 && v <= 100) || 'Score must be between 0 and 100']"
+              :rules="[v => (v !== null && v >= 0 && v <= 100) || 'Score must be between 0 and 100']"
               required
           ></v-text-field>
         </v-form>
@@ -30,14 +30,15 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { supabase } from '@/supabase'
+import { useEnglishStore } from '@/stores/english.store'
 
 const props = defineProps({
   modelValue: Boolean,
   topic: Object
 })
-const emit = defineEmits(['update:modelValue', 'score-submitted'])
+const emit = defineEmits(['update:modelValue'])
 
+const store = useEnglishStore()
 const isOpen = computed({
   get: () => props.modelValue,
   set: (val) => emit('update:modelValue', val)
@@ -53,35 +54,11 @@ const submitScore = async () => {
 
   loading.value = true
   try {
-    // 1. Log the test trial
-    await supabase.from('grammar_tests').insert({
-      topic_id: props.topic.id,
-      score: score.value,
-      tested_at: new Date().toISOString()
-    })
-
-    // 2. Fetch existing mastery to calculate new peak score
-    const { data: existing } = await supabase
-        .from('grammar_progress')
-        .select('mastery_score')
-        .eq('topic_id', props.topic.id)
-        .single()
-
-    const newMastery = Math.max(score.value, existing?.mastery_score || 0)
-    const isPassed = newMastery >= 80 // Pass threshold
-
-    // 3. Upsert overall progress
-    await supabase.from('grammar_progress').upsert({
-      topic_id: props.topic.id,
-      mastery_score: newMastery,
-      passed: isPassed
-    })
-
-    emit('score-submitted')
+    await store.submitGrammarTest('Scholar', props.topic.id, score.value)
     isOpen.value = false
     score.value = null
   } catch (error) {
-    console.error('Failed to submit score:', error)
+    console.error('Failed to submit score via store:', error)
   } finally {
     loading.value = false
   }

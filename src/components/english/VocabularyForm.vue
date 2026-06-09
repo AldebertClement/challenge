@@ -25,6 +25,15 @@
             required
         ></v-text-field>
 
+        <v-text-field
+            v-model="source"
+            label="Source Document (e.g., Book, Poem)"
+            variant="underlined"
+            color="#5c4033"
+            required
+            :rules="[v => !!v || 'A source scroll is required']"
+        ></v-text-field>
+
         <v-textarea
             v-model="notes"
             label="Scholar's Notes"
@@ -37,7 +46,7 @@
             type="submit"
             color="#5c4033"
             class="mt-4 text-white w-100 font-weight-bold"
-            :loading="loading"
+            :loading="store.loading"
         >
           Seal the Ledger
         </v-btn>
@@ -48,37 +57,37 @@
 
 <script setup>
 import { ref } from 'vue'
-import { supabase } from '@/supabase'
+import { useEnglishStore } from '@/stores/english.store'
 
-const emit = defineEmits(['log-added'])
+const store = useEnglishStore()
 
 const wordsLearned = ref(0)
 const wordsReviewed = ref(0)
+const source = ref('Ancient Scroll')
 const notes = ref('')
-const loading = ref(false)
 const form = ref(null)
 
 const submitLog = async () => {
   const { valid } = await form.value.validate()
   if (!valid) return
 
-  loading.value = true
   try {
-    await supabase.from('vocabulary_logs').insert({
-      date: new Date().toISOString().split('T')[0],
-      learned: wordsLearned.value,
-      reviewed: wordsReviewed.value,
-      notes: notes.value
-    })
+    const today = new Date().toISOString().split('T')[0]
+    await store.logVocabulary(
+        'Scholar',
+        today,
+        wordsLearned.value,
+        wordsReviewed.value,
+        source.value,
+        notes.value
+    )
 
-    emit('log-added')
     wordsLearned.value = 0
     wordsReviewed.value = 0
+    source.value = 'Ancient Scroll'
     notes.value = ''
   } catch (error) {
-    console.error('Error inscribing records:', error)
-  } finally {
-    loading.value = false
+    console.error('Error logging vocabulary to store:', error)
   }
 }
 </script>

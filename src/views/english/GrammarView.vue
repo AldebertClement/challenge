@@ -11,47 +11,54 @@
       </v-col>
     </v-row>
 
-    <RankTierSection
-        v-for="rank in cefrRanks"
-        :key="rank.level"
-        :rank="rank"
-        :topics="getTopicsByRank(rank.level)"
-        @open-test="openTestDialog"
-    />
+    <v-row v-if="store.loading" justify="center">
+      <v-col cols="12" class="text-center">
+        <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
+        <p class="mt-4 font-italic">Consulting the Grand Library...</p>
+      </v-col>
+    </v-row>
+
+    <template v-else>
+      <RankTierSection
+          v-for="rank in cefrRanks"
+          :key="rank.level"
+          :rank="rank"
+          :topics="getTopicsByRank(rank.level)"
+          @open-test="openTestDialog"
+      />
+    </template>
 
     <TestScoreDialog
         v-model="dialogVisible"
         :topic="selectedTopic"
-        @score-submitted="fetchTopics"
     />
   </v-container>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { supabase } from '@/supabase'
+import { ref, computed, onMounted } from 'vue'
+import { useEnglishStore } from '@/stores/english.store'
 import { cefrRanks } from '@/utils/cefrRanks'
-import RankTierSection from '@/components/RankTierSection.vue'
-import TestScoreDialog from '@/components/TestScoreDialog.vue'
+import RankTierSection from '@/components/english/RankTierSection.vue'
+import TestScoreDialog from '@/components/english/TestScoreDialog.vue'
 
-const topics = ref([])
+const store = useEnglishStore()
 const dialogVisible = ref(false)
 const selectedTopic = ref(null)
 
-const fetchTopics = async () => {
-  const { data, error } = await supabase.from('grammar_topics').select(`
-    id, title, cefr_level, description,
-    grammar_progress ( mastery_score, passed )
-  `)
-  if (!error && data) {
-    topics.value = data
-  } else {
-    console.error('Failed to retrieve ancient scrolls:', error)
-  }
-}
+// Map progress data reactively into grammar topics
+const combinedTopics = computed(() => {
+  return store.grammarTopics.map(topic => {
+    const progress = store.grammarProgress.find(p => p.topic_id === topic.id)
+    return {
+      ...topic,
+      progress: progress || { mastery_score: 0, validated: false }
+    }
+  })
+})
 
 const getTopicsByRank = (level) => {
-  return topics.value.filter(t => t.cefr_level === level)
+  return combinedTopics.value.filter(t => t.cefr_level === level)
 }
 
 const openTestDialog = (topic) => {
@@ -60,6 +67,6 @@ const openTestDialog = (topic) => {
 }
 
 onMounted(() => {
-  fetchTopics()
+  store.fetchGrammarData()
 })
 </script>

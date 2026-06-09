@@ -9,27 +9,26 @@
 
     <v-row>
       <v-col cols="12" md="4">
-        <VocabularyForm @log-added="refreshChart" />
+        <VocabularyForm />
       </v-col>
       <v-col cols="12" md="8">
-        <VocabularyChart ref="chartRef" />
+        <VocabularyChart />
       </v-col>
     </v-row>
   </v-container>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import VocabularyForm from '@/components/VocabularyForm.vue'
-import VocabularyChart from '@/components/VocabularyChart.vue'
+import { onMounted } from 'vue'
+import { useEnglishStore } from '@/stores/english.store'
+import VocabularyForm from '@/components/english/VocabularyForm.vue'
+import VocabularyChart from '@/components/english/VocabularyChart.vue'
 
-const chartRef = ref(null)
+const store = useEnglishStore()
 
-const refreshChart = () => {
-  if (chartRef.value) {
-    chartRef.value.fetchData()
-  }
-}
+onMounted(() => {
+  store.fetchVocabularyLogs()
+})
 </script>
 
 <style scoped>

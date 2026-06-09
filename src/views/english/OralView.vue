@@ -23,8 +23,8 @@
 <script setup>
 import { onMounted } from 'vue'
 import { useEnglishStore } from '@/stores/english.store'
-import OralSessionForm from '@/components/OralSessionForm.vue'
-import OralHistoryTable from '@/components/OralHistoryTable.vue'
+import OralSessionForm from '@/components/english/OralSessionForm.vue'
+import OralHistoryTable from '@/components/english/OralHistoryTable.vue'
 
 const englishStore = useEnglishStore()
 
