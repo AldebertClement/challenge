@@ -5,11 +5,20 @@ import { supabase } from '@/services/supabase'
 export const useEnglishStore = defineStore('english', () => {
     const grammarTopics = ref([])
     const grammarProgress = ref([])
+    const grammarTests = ref([])
     const vocabularyLogs = ref([])
     const oralSessions = ref([])
     const readingBooks = ref([])
     const readingLogs = ref([])
     const loading = ref(false)
+
+    async function fetchGrammarTests() {
+        const { data, error } = await supabase
+            .from('grammar_tests')
+            .select('*')
+            .order('tested_at', { ascending: false })
+        if (!error) grammarTests.value = data
+    }
 
     async function fetchGrammarData() {
         loading.value = true
@@ -18,6 +27,8 @@ export const useEnglishStore = defineStore('english', () => {
 
         if (!e1) grammarTopics.value = topics
         if (!e2) grammarProgress.value = progress
+
+        await fetchGrammarTests()
         loading.value = false
     }
 
@@ -39,6 +50,24 @@ export const useEnglishStore = defineStore('english', () => {
             }, { onConflict: 'user_name,topic_id' })
 
         if (progressError) throw progressError
+        await fetchGrammarData()
+    }
+
+    async function deleteGrammarProgress(userName, topicId) {
+        const { error: e1 } = await supabase
+            .from('grammar_tests')
+            .delete()
+            .eq('user_name', userName)
+            .eq('topic_id', topicId)
+        if (e1) throw e1
+
+        const { error: e2 } = await supabase
+            .from('grammar_progress')
+            .delete()
+            .eq('user_name', userName)
+            .eq('topic_id', topicId)
+        if (e2) throw e2
+
         await fetchGrammarData()
     }
 
@@ -92,6 +121,24 @@ export const useEnglishStore = defineStore('english', () => {
         await fetchOralSessions()
     }
 
+    async function updateOralSession(id, updates) {
+        const { error } = await supabase
+            .from('oral_sessions')
+            .update(updates)
+            .eq('id', id)
+        if (error) throw error
+        await fetchOralSessions()
+    }
+
+    async function deleteOralSession(id) {
+        const { error } = await supabase
+            .from('oral_sessions')
+            .delete()
+            .eq('id', id)
+        if (error) throw error
+        await fetchOralSessions()
+    }
+
     async function fetchReadingData() {
         loading.value = true
         const { data: books, error: e1 } = await supabase.from('reading_books').select('*')
@@ -129,8 +176,9 @@ export const useEnglishStore = defineStore('english', () => {
     }
 
     return {
-        grammarTopics, grammarProgress, vocabularyLogs, oralSessions, readingBooks, readingLogs, loading,
-        fetchGrammarData, submitGrammarTest, fetchVocabularyLogs, logVocabulary, fetchOralSessions, logOralSession,
+        grammarTopics, grammarProgress, grammarTests, vocabularyLogs, oralSessions, readingBooks, readingLogs, loading,
+        fetchGrammarData, fetchGrammarTests, submitGrammarTest, deleteGrammarProgress, fetchVocabularyLogs, logVocabulary,
+        fetchOralSessions, logOralSession, updateOralSession, deleteOralSession,
         fetchReadingData, updateReadingBook, logReadingWeek
     }
 })

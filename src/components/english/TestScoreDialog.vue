@@ -1,8 +1,8 @@
 <template>
   <v-dialog v-model="isOpen" max-width="450">
-    <v-card class="medieval-dialog border-gold">
+    <v-card class="medieval-dialog border-gold bg-surface">
       <v-card-title class="bg-primary text-white text-h6 py-3">
-        Trial by Combat: {{ topic?.title }}
+        Trial by Combat: {{ topic?.name }}
       </v-card-title>
       <v-card-text class="pt-6">
         <p class="mb-4">Submit the results of your recent trial to update your mastery standing.</p>
@@ -26,11 +26,16 @@
       </v-card-actions>
     </v-card>
   </v-dialog>
+
+  <v-snackbar v-model="snackbar.show" :color="snackbar.color" :timeout="3000">
+    {{ snackbar.message }}
+  </v-snackbar>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
 import { useEnglishStore } from '@/stores/english.store'
+import { useAuthStore } from '@/stores/auth.store'
 
 const props = defineProps({
   modelValue: Boolean,
@@ -39,6 +44,8 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue'])
 
 const store = useEnglishStore()
+const authStore = useAuthStore()
+
 const isOpen = computed({
   get: () => props.modelValue,
   set: (val) => emit('update:modelValue', val)
@@ -47,6 +54,14 @@ const isOpen = computed({
 const score = ref(null)
 const loading = ref(false)
 const form = ref(null)
+const snackbar = ref({ show: false, color: 'success', message: '' })
+
+function getNormalizedUser() {
+  return (authStore.selectedProfile || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+}
 
 const submitScore = async () => {
   const { valid } = await form.value.validate()
@@ -54,11 +69,15 @@ const submitScore = async () => {
 
   loading.value = true
   try {
-    await store.submitGrammarTest('Scholar', props.topic.id, score.value)
-    isOpen.value = false
-    score.value = null
+    await store.submitGrammarTest(getNormalizedUser(), props.topic.id, score.value)
+    snackbar.value = { show: true, color: 'success', message: 'Trial recorded! Your mastery has been updated.' }
+    setTimeout(() => {
+      isOpen.value = false
+      score.value = null
+    }, 1000)
   } catch (error) {
     console.error('Failed to submit score via store:', error)
+    snackbar.value = { show: true, color: 'error', message: 'Failed to record trial. Please try again.' }
   } finally {
     loading.value = false
   }

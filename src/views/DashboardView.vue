@@ -68,7 +68,15 @@
 
     <div class="ornament-divider my-8"></div>
 
-    <ChartPanel :exercises="allExercises" />
+    <ChartPanel
+        :exercises="allExercises"
+        :workouts="allWorkouts"
+        :workout-sets="allWorkoutSets"
+        :grammar-tests="allGrammarTests"
+        :vocabulary-logs="allVocabularyLogs"
+        :oral-sessions="allOralSessions"
+        :reading-logs="allReadingLogs"
+    />
   </div>
 </template>
 
@@ -89,6 +97,12 @@ const error = ref(false)
 // Data Stores
 const allExercises = ref([])
 const allTopics = ref([])
+const allWorkouts = ref([])
+const allWorkoutSets = ref([])
+const allGrammarTests = ref([])
+const allVocabularyLogs = ref([])
+const allOralSessions = ref([])
+const allReadingLogs = ref([])
 
 // Clément
 const clementPoints = ref({})
@@ -117,16 +131,31 @@ onMounted(async () => {
       supabase.from('workout_sets').select('workout_id, exercise_id, reps, weight, workouts(user_name, date)'),
       supabase.from('exercises').select('id, name'),
       supabase.from('grammar_topics').select('id, name, cefr_level'),
-      supabase.from('grammar_progress').select('user_name, topic_id, mastery_score, validated'),
-      supabase.from('vocabulary_logs').select('user_name, words_learned, words_reviewed'),
-      supabase.from('oral_sessions').select('user_name, duration'),
-      supabase.from('reading_logs').select('user_name, pages_translated')
+      // Added tested_at and passed (or mapping from validated) to ensure the timeline series has dates
+      supabase.from('grammar_progress').select('user_name, topic_id, mastery_score, validated, tested_at, passed'),
+      // Added date/week_start columns so ChartPanel can chart them
+      supabase.from('vocabulary_logs').select('user_name, words_learned, words_reviewed, date'),
+      supabase.from('oral_sessions').select('user_name, duration, date'),
+      supabase.from('reading_logs').select('user_name, pages_translated, week_start')
     ])
 
     if (workoutsRes.error || setsRes.error || topicsRes.error) throw new Error('Data fetch failed')
 
     allExercises.value = exercisesRes.data || []
     allTopics.value = topicsRes.data || []
+    allWorkouts.value = workoutsRes.data || []
+    allWorkoutSets.value = setsRes.data || []
+
+    // Map grammar progress to safely include passed/tested_at fallbacks in case column structures differ
+    allGrammarTests.value = (progressRes.data || []).map(p => ({
+      ...p,
+      passed: p.passed !== undefined ? p.passed : p.validated,
+      tested_at: p.tested_at || new Date().toISOString()
+    }))
+
+    allVocabularyLogs.value = vocabRes.data || []
+    allOralSessions.value = oralRes.data || []
+    allReadingLogs.value = readingRes.data || []
 
     // Helper process for user
     const processUser = (name) => {

@@ -38,21 +38,34 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useEnglishStore } from '@/stores/english.store'
+import { useAuthStore } from '@/stores/auth.store'
 import { cefrRanks } from '@/utils/cefrRanks'
 import RankTierSection from '@/components/english/RankTierSection.vue'
 import TestScoreDialog from '@/components/english/TestScoreDialog.vue'
 
 const store = useEnglishStore()
+const authStore = useAuthStore()
+
 const dialogVisible = ref(false)
 const selectedTopic = ref(null)
 
-// Map progress data reactively into grammar topics
+function getNormalizedUser() {
+  return (authStore.selectedProfile || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+}
+
+// Map progress and test history data reactively into grammar topics
 const combinedTopics = computed(() => {
+  const currentUser = getNormalizedUser()
   return store.grammarTopics.map(topic => {
-    const progress = store.grammarProgress.find(p => p.topic_id === topic.id)
+    const progress = store.grammarProgress.find(p => p.topic_id === topic.id && p.user_name === currentUser)
+    const tests = store.grammarTests.filter(t => t.topic_id === topic.id && t.user_name === currentUser)
     return {
       ...topic,
-      progress: progress || { mastery_score: 0, validated: false }
+      progress: progress || { mastery_score: 0, validated: false },
+      tests: tests || []
     }
   })
 })
