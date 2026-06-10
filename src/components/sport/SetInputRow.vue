@@ -58,7 +58,7 @@
 </template>
 
 <script setup>
-import { sportRules } from '@/validators'
+import { sportRules } from '@/utils/validators'
 
 const props = defineProps({
   modelValue: {

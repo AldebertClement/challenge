@@ -13,8 +13,12 @@
       {{ exercise.description || 'No lore or instructions provided for this maneuver.' }}
     </v-card-text>
 
-    <v-card-actions class="pt-0 pb-2 px-4 text-caption text-iron d-flex justify-end">
-      Forged by: {{ exercise.created_by || 'Unknown Warrior' }}
+    <v-card-actions class="pt-0 pb-2 px-4 d-flex align-center justify-space-between">
+      <span class="text-caption text-iron">Forged by: {{ exercise.created_by || 'Unknown Warrior' }}</span>
+      <div class="d-flex gap-1">
+        <v-btn icon="mdi-pencil" color="primary" variant="text" size="small" @click="$emit('edit', exercise)" title="Edit Maneuver"></v-btn>
+        <v-btn icon="mdi-delete" color="error" variant="text" size="small" @click="$emit('delete', exercise)" title="Delete Maneuver"></v-btn>
+      </div>
     </v-card-actions>
   </v-card>
 </template>
@@ -26,4 +30,5 @@ defineProps({
     required: true
   }
 })
+defineEmits(['edit', 'delete'])
 </script>

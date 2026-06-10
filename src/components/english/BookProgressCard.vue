@@ -65,6 +65,8 @@
                 type="number"
                 bg-color="surface-light"
                 :rules="englishRules.totalPages"
+                hint="Max 5000 pages"
+                persistent-hint
                 required
                 class="mb-4"
             ></v-text-field>
@@ -81,7 +83,10 @@
 
             <div class="d-flex justify-end gap-2 mt-4">
               <v-btn color="secondary" variant="text" @click="dialog = false">Cancel</v-btn>
-              <v-btn color="primary" type="submit" :disabled="!isFormValid" :loading="loading">
+              <v-btn color="primary" type="submit" :disabled="!isFormValid || loading" :loading="loading">
+                <template v-if="loading">
+                  <v-progress-circular indeterminate size="20" color="white" class="me-2"></v-progress-circular>
+                </template>
                 Inscribe Book
               </v-btn>
             </div>
@@ -89,6 +94,13 @@
         </v-card-text>
       </v-card>
     </v-dialog>
+
+    <v-snackbar v-model="snackbar.show" :color="snackbar.color" :timeout="3000">
+      {{ snackbar.text }}
+      <template v-slot:actions>
+        <v-btn variant="text" @click="snackbar.show = false">Close</v-btn>
+      </template>
+    </v-snackbar>
   </v-card>
 </template>
 
@@ -96,7 +108,7 @@
 import { ref, computed } from 'vue'
 import { useEnglishStore } from '@/stores/english.store'
 import { useAuthStore } from '@/stores/auth.store'
-import { englishRules } from '@/validators'
+import { englishRules } from '@/utils/validators'
 import { useDisplay } from 'vuetify'
 
 const englishStore = useEnglishStore()
@@ -107,19 +119,34 @@ const dialog = ref(false)
 const isFormValid = ref(false)
 const loading = ref(false)
 
+const snackbar = ref({ show: false, text: '', color: 'success' })
+
 const bookForm = ref({
   title: '',
   totalPages: 100,
   startedAt: new Date().toISOString().substring(0, 10)
 })
 
+const normalizeUserName = (name) => {
+  return name?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') || ''
+}
+
+const getErrorMessage = (err) => {
+  const msg = err?.message || ''
+  const code = String(err?.code || '')
+  if (code === '23514' || msg.includes('constraint') || msg.includes('400')) return "Invalid data. Please check your inputs and try again."
+  if (code === '42501' || msg.includes('Access denied') || msg.includes('403')) return "Access denied. Please log in again."
+  if (msg.includes('fetch') || msg.includes('network') || msg.includes('Failed to fetch')) return "Could not reach the server. Check your connection."
+  return "Something went wrong. Please try again."
+}
+
 const currentBook = computed(() => {
-  const profile = authStore.selectedProfile
+  const profile = normalizeUserName(authStore.selectedProfile)
   return englishStore.readingBooks.find(b => b.user_name === profile) || null
 })
 
 const totalPagesRead = computed(() => {
-  const profile = authStore.selectedProfile
+  const profile = normalizeUserName(authStore.selectedProfile)
   return englishStore.readingLogs
       .filter(log => log.user_name === profile)
       .reduce((sum, log) => sum + (log.pages_translated || 0), 0)
@@ -152,7 +179,7 @@ async function saveBook() {
   if (!isFormValid.value) return
   loading.value = true
   try {
-    const profile = authStore.selectedProfile
+    const profile = normalizeUserName(authStore.selectedProfile)
     await englishStore.updateReadingBook(
         profile,
         bookForm.value.title,
@@ -160,8 +187,10 @@ async function saveBook() {
         bookForm.value.startedAt
     )
     dialog.value = false
+    snackbar.value = { show: true, text: 'Entry saved to the tome!', color: 'success' }
   } catch (err) {
     console.error(err)
+    snackbar.value = { show: true, text: getErrorMessage(err), color: 'error' }
   } finally {
     loading.value = false
   }

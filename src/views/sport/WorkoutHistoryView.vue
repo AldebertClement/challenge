@@ -33,6 +33,8 @@
               v-for="workout in sportStore.workouts"
               :key="workout.id"
               :workout="workout"
+              :is-expanded="expandedCardId === workout.id"
+              @toggle="toggleCardExpand(workout.id)"
           />
         </div>
       </template>
@@ -77,14 +79,18 @@ import LogBattleForm from '@/components/sport/LogBattleForm.vue'
 
 const sportStore = useSportStore()
 const logDialog = ref(false)
+const expandedCardId = ref(null)
 
 onMounted(async () => {
   await sportStore.fetchWorkouts()
 })
 
+const toggleCardExpand = (id) => {
+  expandedCardId.value = expandedCardId.value === id ? null : id
+}
+
 const onBattleLogged = () => {
   logDialog.value = false
-  // sportStore.logWorkout automatically invokes fetchWorkouts() internally, so the history views update reactively
 }
 </script>
 

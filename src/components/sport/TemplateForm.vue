@@ -3,7 +3,7 @@
     <v-container class="pa-3 pa-lg-6 mx-auto" style="max-width: 800px;">
 
       <div class="text-center mb-6">
-        <h2 class="section-title">Draft Battle Plan</h2>
+        <h2 class="section-title">{{ isEditing ? 'Reforge Battle Plan' : 'Draft Battle Plan' }}</h2>
         <div class="ornament-divider mt-2"></div>
       </div>
 
@@ -57,11 +57,18 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useSportStore } from '@/stores/sport.store'
 import { useAuthStore } from '@/stores/auth.store'
-import { sportRules } from '@/validators'
+import { sportRules } from '@/utils/validators'
 import TemplateExerciseRow from './TemplateExerciseRow.vue'
+
+const props = defineProps({
+  initialData: {
+    type: Object,
+    default: null
+  }
+})
 
 const emit = defineEmits(['saved', 'cancel'])
 
@@ -73,15 +80,29 @@ const templateName = ref('')
 const templateExercises = ref([])
 const loading = ref(false)
 
+const isEditing = computed(() => !!props.initialData?.id)
+
 onMounted(async () => {
   if (sportStore.exercises.length === 0) {
     await sportStore.fetchExercises()
+  }
+
+  if (props.initialData) {
+    templateName.value = props.initialData.name
+    templateExercises.value = props.initialData.session_template_exercises.map((te) => ({
+      _clientId: Date.now() + Math.random(),
+      exercise_id: te.exercise_id,
+      target_sets: te.target_sets,
+      target_reps: te.target_reps,
+      target_weight: te.target_weight,
+      rest_time: te.rest_time
+    }))
   }
 })
 
 const addExerciseRow = () => {
   templateExercises.value.push({
-    _clientId: Date.now(), // Internal unique ID for v-for keying
+    _clientId: Date.now(),
     exercise_id: null,
     target_sets: 3,
     target_reps: 10,
@@ -101,7 +122,13 @@ const submitTemplate = async () => {
   try {
     loading.value = true
     const author = authStore.selectedProfile || 'Anonymous Knight'
-    await sportStore.addTemplate(templateName.value, author, templateExercises.value)
+
+    if (isEditing.value) {
+      await sportStore.updateTemplate(props.initialData.id, templateName.value, templateExercises.value)
+    } else {
+      await sportStore.addTemplate(templateName.value, author, templateExercises.value)
+    }
+
     emit('saved')
   } catch (error) {
     console.error('Failed to seal battle plan:', error)

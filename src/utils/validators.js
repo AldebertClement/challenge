@@ -17,5 +17,5 @@ export const englishRules = {
     wordsReviewed:  [v => (Number.isInteger(+v) && +v >= 0)               || 'Must be 0 or more'],
     oralDuration:   [v => (Number.isInteger(+v) && +v >= 1 && +v <= 300) || 'Between 1 and 300 minutes'],
     selfEval:       [v => (Number.isInteger(+v) && +v >= 1 && +v <= 5)   || 'Between 1 and 5'],
-    totalPages:     [v => (Number.isInteger(+v) && +v >= 1 && +v <= 2000)|| 'Between 1 and 2000'],
+    totalPages:     [v => (Number.isInteger(+v) && +v >= 1 && +v <= 5000)|| 'Between 1 and 5000'],
 }

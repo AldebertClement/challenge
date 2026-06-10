@@ -10,8 +10,19 @@ const routes = [
         component: MainLayout,
         children: [
             { path: '', name: 'Dashboard', component: () => import('@/views/DashboardView.vue') },
+
+            // Sport Routes
             { path: 'sport', name: 'Sport', component: () => import('@/views/sport/SportView.vue') },
-            { path: 'english', name: 'English', component: () => import('@/views/english/EnglishView.vue') }
+            { path: 'sport/exercises', name: 'Exercises', component: () => import('@/views/sport/ExercisesView.vue') },
+            { path: 'sport/templates', name: 'Templates', component: () => import('@/views/sport/TemplatesView.vue') },
+            { path: 'sport/history', name: 'WorkoutHistory', component: () => import('@/views/sport/WorkoutHistoryView.vue') },
+
+            // English Routes
+            { path: 'english', name: 'English', component: () => import('@/views/english/EnglishView.vue') },
+            { path: 'english/grammar', name: 'Grammar', component: () => import('@/views/english/GrammarView.vue') },
+            { path: 'english/vocabulary', name: 'Vocabulary', component: () => import('@/views/english/VocabularyView.vue') },
+            { path: 'english/reading', name: 'Reading', component: () => import('@/views/english/ReadingView.vue') },
+            { path: 'english/oral', name: 'Oral', component: () => import('@/views/english/OralView.vue') }
         ]
     }
 ]

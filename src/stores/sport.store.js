@@ -30,6 +30,26 @@ export const useSportStore = defineStore('sport', () => {
         if (error) throw error
     }
 
+    async function updateExercise(id, name, description) {
+        const { error } = await supabase
+            .from('exercises')
+            .update({ name, description })
+            .eq('id', id)
+
+        if (error) throw error
+        await fetchExercises()
+    }
+
+    async function deleteExercise(id) {
+        const { error } = await supabase
+            .from('exercises')
+            .delete()
+            .eq('id', id)
+
+        if (error) throw error
+        await fetchExercises()
+    }
+
     async function fetchTemplates() {
         loading.value = true
         const { data, error } = await supabase
@@ -73,12 +93,63 @@ export const useSportStore = defineStore('sport', () => {
         await fetchTemplates()
     }
 
+    async function updateTemplate(id, name, templateExercises) {
+        const { error: templateError } = await supabase
+            .from('session_templates')
+            .update({ name })
+            .eq('id', id)
+
+        if (templateError) throw templateError
+
+        // Clear existing exercises to replace them entirely
+        const { error: clearError } = await supabase
+            .from('session_template_exercises')
+            .delete()
+            .eq('template_id', id)
+
+        if (clearError) throw clearError
+
+        if (templateExercises && templateExercises.length > 0) {
+            const rows = templateExercises.map((te, index) => ({
+                template_id: id,
+                exercise_id: te.exercise_id,
+                order_index: index,
+                target_sets: parseInt(te.target_sets),
+                target_reps: parseInt(te.target_reps),
+                target_weight: te.target_weight ? parseFloat(te.target_weight) : null,
+                rest_time: parseInt(te.rest_time)
+            }))
+            const { error: exercisesError } = await supabase
+                .from('session_template_exercises')
+                .insert(rows)
+            if (exercisesError) throw exercisesError
+        }
+
+        await fetchTemplates()
+    }
+
+    async function deleteTemplate(id) {
+        // Cascade delete on relations handled manually just in case DB cascade is not set
+        await supabase.from('session_template_exercises').delete().eq('template_id', id)
+
+        const { error } = await supabase
+            .from('session_templates')
+            .delete()
+            .eq('id', id)
+
+        if (error) throw error
+        await fetchTemplates()
+    }
+
     async function fetchWorkouts() {
         loading.value = true
         const { data, error } = await supabase
             .from('workouts')
             .select(`
         *,
+        session_templates (
+          name
+        ),
         workout_sets (
           *,
           exercises (*)
@@ -116,8 +187,45 @@ export const useSportStore = defineStore('sport', () => {
         await fetchWorkouts()
     }
 
+    async function updateWorkout(workoutId, { date, duration, notes }, sets) {
+        const { error: workoutError } = await supabase
+            .from('workouts')
+            .update({ date, duration: parseInt(duration), notes })
+            .eq('id', workoutId)
+
+        if (workoutError) throw workoutError
+
+        if (sets && sets.length > 0) {
+            for (const s of sets) {
+                const { error: setError } = await supabase
+                    .from('workout_sets')
+                    .update({
+                        reps: parseInt(s.reps),
+                        weight: parseFloat(s.weight),
+                        notes: s.notes || null
+                    })
+                    .eq('id', s.id)
+                if (setError) throw setError
+            }
+        }
+
+        await fetchWorkouts()
+    }
+
+    async function deleteWorkout(workoutId) {
+        const { error } = await supabase
+            .from('workouts')
+            .delete()
+            .eq('id', workoutId)
+
+        if (error) throw error
+        await fetchWorkouts()
+    }
+
     return {
         exercises, templates, workouts, loading,
-        fetchExercises, addExercise, fetchTemplates, addTemplate, fetchWorkouts, logWorkout
+        fetchExercises, addExercise, updateExercise, deleteExercise,
+        fetchTemplates, addTemplate, updateTemplate, deleteTemplate,
+        fetchWorkouts, logWorkout, updateWorkout, deleteWorkout
     }
 })

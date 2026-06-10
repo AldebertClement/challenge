@@ -78,7 +78,7 @@
 
 <script setup>
 import { computed } from 'vue'
-import { sportRules } from '@/validators' // Adjust path if needed
+import { sportRules } from '@/utils/validators' // Adjust path if needed
 
 const props = defineProps({
   modelValue: { type: Object, required: true },

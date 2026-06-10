@@ -57,3 +57,8 @@ body, .v-application {
 .apexcharts-canvas {
     background: transparent !important;
 }
+
+/* Ensure chip text remains visible when selected */
+.v-chip--variant-flat {
+    color: #0E0C07 !important;
+}
