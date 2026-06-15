@@ -249,7 +249,7 @@ function getUser() {
       .replace(/[\u0300-\u036f]/g, '')
 }
 
-// Live computed data from store for UI updates
+// Live computed data perfectly aligned with store state updates
 const liveTrainings = computed(() =>
     (store.grammarTraining || []).filter(
         tr => tr.topic_id === props.topic?.id && tr.user_name === getUser()
@@ -361,18 +361,15 @@ const executeDelete = async () => {
   loading.value = true
   try {
     if (deleteType.value === 'training') {
-      // Sent getUser() to the action so the Supabase filter can circumvent the RLS blocker
       await store.deleteGrammarTraining(itemToDelete.value.id, getUser())
       snackbar.value = { show: true, color: 'success', message: 'Training deleted.' }
     } else if (deleteType.value === 'test') {
-      // Sent getUser() to the action so the Supabase filter can circumvent the RLS blocker
-      await store.deleteGrammarTest(itemToDelete.value.id, getUser())
+      await store.deleteGrammarTest(itemToDelete.value.id, getUser(), itemToDelete.value.topic_id)
       snackbar.value = { show: true, color: 'success', message: 'Trial erased.' }
     }
     deleteDialog.value = false
   } catch (error) {
-    console.error(error)
-    snackbar.value = { show: true, color: 'error', message: 'Failed to delete item.' }
+    snackbar.value = { show: true, color: 'error', message: 'Failed to delete.' }
   } finally {
     loading.value = false
   }
