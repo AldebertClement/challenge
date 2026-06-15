@@ -87,14 +87,3 @@ const onBattleLogged = () => {
   border: 1px dashed #3A3020;
 }
 </style>
-<style scoped>
-@media screen and (max-width: 600px) {
-  .fab-mobile {
-    bottom: 60px !important;
-  }
-
-  .card-mobile {
-    padding-bottom: 80px !important;
-  }
-}
-</style>

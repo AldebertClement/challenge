@@ -179,9 +179,6 @@ const useForBattle = (template) => {
 </script>
 <style scoped>
 @media screen and (max-width: 600px) {
-  .fab-mobile {
-    bottom: 60px !important;
-  }
 
   .card-mobile {
     padding-bottom: 80px !important;
