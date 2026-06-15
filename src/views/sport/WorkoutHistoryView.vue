@@ -47,19 +47,7 @@
       </template>
     </div>
 
-    <v-btn
-        v-if="$vuetify.display.smAndDown"
-        icon="mdi-sword"
-        color="primary"
-        elevation="12"
-        position="fixed"
-        location="bottom right"
-        class="ma-4"
-        size="large"
-        @click="logDialog = true"
-    >
-      <v-icon>mdi-plus</v-icon>
-    </v-btn>
+
 
     <v-dialog v-model="logDialog" max-width="850" persistent>
       <LogBattleForm
@@ -97,5 +85,16 @@ const onBattleLogged = () => {
 <style scoped>
 .border-iron-dashed {
   border: 1px dashed #3A3020;
+}
+</style>
+<style scoped>
+@media screen and (max-width: 600px) {
+  .fab-mobile {
+    bottom: 60px !important;
+  }
+
+  .card-mobile {
+    padding-bottom: 80px !important;
+  }
 }
 </style>

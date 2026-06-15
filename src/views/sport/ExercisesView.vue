@@ -10,7 +10,7 @@
       <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
     </v-row>
 
-    <v-row v-else>
+    <v-row v-else class="card-mobile">
       <v-col v-for="exercise in sportStore.exercises" :key="exercise.id" cols="12" sm="6" md="4" lg="3">
         <ExerciseCard
             :exercise="exercise"
@@ -26,7 +26,7 @@
         elevation="12"
         position="fixed"
         location="bottom right"
-        class="ma-4 ma-md-6"
+        class="ma-4 ma-md-6 fab-mobile"
         size="x-large"
         @click="openAddDialog"
     >
@@ -40,7 +40,7 @@
           {{ isEditing ? 'Reforge Maneuver' : 'Forge New Maneuver' }}
         </v-card-title>
 
-        <v-card-text>
+        <v-card-text >
           <v-form ref="form" @submit.prevent="submitExercise">
             <v-text-field
                 v-model="newExercise.name"
@@ -75,7 +75,8 @@
     <v-dialog v-model="deleteDialog" max-width="400">
       <v-card class="surface border-error">
         <v-card-title class="text-error font-weight-bold d-flex align-center">
-          <v-icon color="error" class="mr-2">mdi-alert</v-icon> Discard Maneuver
+          <v-icon color="error" class="mr-2">mdi-alert</v-icon>
+          Discard Maneuver
         </v-card-title>
         <v-card-text class="text-on-surface pt-2">
           Are you sure you want to remove this weapon from the armory?
@@ -91,10 +92,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useSportStore } from '@/stores/sport.store'
-import { useAuthStore } from '@/stores/auth.store'
-import { sportRules } from '@/utils/validators'
+import {ref, onMounted} from 'vue'
+import {useSportStore} from '@/stores/sport.store'
+import {useAuthStore} from '@/stores/auth.store'
+import {sportRules} from '@/utils/validators'
 import ExerciseCard from '@/components/sport/ExerciseCard.vue'
 
 const sportStore = useSportStore()
@@ -122,28 +123,28 @@ onMounted(() => {
 const openAddDialog = () => {
   isEditing.value = false
   editId.value = null
-  newExercise.value = { name: '', description: '' }
+  newExercise.value = {name: '', description: ''}
   dialog.value = true
 }
 
 const openEditDialog = (exercise) => {
   isEditing.value = true
   editId.value = exercise.id
-  newExercise.value = { name: exercise.name, description: exercise.description }
+  newExercise.value = {name: exercise.name, description: exercise.description}
   dialog.value = true
 }
 
 const closeDialog = () => {
   dialog.value = false
   setTimeout(() => {
-    newExercise.value = { name: '', description: '' }
+    newExercise.value = {name: '', description: ''}
     isEditing.value = false
     editId.value = null
   }, 200)
 }
 
 const submitExercise = async () => {
-  const { valid } = await form.value.validate()
+  const {valid} = await form.value.validate()
   if (!valid) return
 
   try {
@@ -181,3 +182,13 @@ const executeDelete = async () => {
   }
 }
 </script>
+<style scoped>
+@media screen and (max-width: 600px) {
+  .fab-mobile {
+    bottom: 60px !important;
+  }
+  .card-mobile{
+    padding-bottom: 80px !important;
+  }
+}
+</style>
