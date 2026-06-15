@@ -64,6 +64,8 @@
         :topics="allTopics"
         :clementProgress="clementGrammarProgress"
         :celioProgress="celioGrammarProgress"
+        :clementTraining="clementGrammarTraining"
+        :celioTraining="celioGrammarTraining"
     />
 
     <div class="ornament-divider my-8"></div>
@@ -73,7 +75,7 @@
         :workouts="allWorkouts"
         :workout-sets="allWorkoutSets"
         :grammar-tests="allGrammarTests"
-        :vocabulary-logs="allVocabularyLogs"
+        :grammar-training="allGrammarTraining" :vocabulary-logs="allVocabularyLogs"
         :oral-sessions="allOralSessions"
         :reading-logs="allReadingLogs"
     />
@@ -100,6 +102,7 @@ const allTopics = ref([])
 const allWorkouts = ref([])
 const allWorkoutSets = ref([])
 const allGrammarTests = ref([])
+const allGrammarTraining = ref([])
 const allVocabularyLogs = ref([])
 const allOralSessions = ref([])
 const allReadingLogs = ref([])
@@ -110,6 +113,7 @@ const clementSportStats = ref({})
 const clementEnglishStats = ref({})
 const clementSets = ref([])
 const clementGrammarProgress = ref([])
+const clementGrammarTraining = ref([])
 
 // Celio
 const celioPoints = ref({})
@@ -117,6 +121,7 @@ const celioSportStats = ref({})
 const celioEnglishStats = ref({})
 const celioSets = ref([])
 const celioGrammarProgress = ref([])
+const celioGrammarTraining = ref([])
 
 onMounted(async () => {
   try {
@@ -124,38 +129,35 @@ onMounted(async () => {
 
     const [
       workoutsRes, setsRes, exercisesRes,
-      topicsRes, progressRes,
-      vocabRes, oralRes, readingRes
+      topicsRes, progressRes, testsRes,
+      vocabRes, oralRes, readingRes,
+      trainingRes
     ] = await Promise.all([
       supabase.from('workouts').select('id, user_name, duration, date'),
       supabase.from('workout_sets').select('workout_id, exercise_id, reps, weight, workouts(user_name, date)'),
       supabase.from('exercises').select('id, name'),
       supabase.from('grammar_topics').select('id, name, cefr_level'),
-      // Added tested_at and passed (or mapping from validated) to ensure the timeline series has dates
-      supabase.from('grammar_progress').select('user_name, topic_id, mastery_score, validated, tested_at, passed'),
-      // Added date/week_start columns so ChartPanel can chart them
+      supabase.from('grammar_progress').select('user_name, topic_id, mastery_score, validated, last_tested_at'),
+      supabase.from('grammar_tests').select('user_name, topic_id, score, passed, tested_at'),
       supabase.from('vocabulary_logs').select('user_name, words_learned, words_reviewed, date'),
-      supabase.from('oral_sessions').select('user_name, duration, date'),
-      supabase.from('reading_logs').select('user_name, pages_translated, week_start')
+      supabase.from('oral_sessions').select('user_name, duration, date, activity_type'),
+      supabase.from('reading_logs').select('user_name, pages_translated, week_start'),
+      supabase.from('grammar_training').select('id, user_name, topic_id, duration, date')
     ])
 
-    if (workoutsRes.error || setsRes.error || topicsRes.error) throw new Error('Data fetch failed')
+    if (workoutsRes.error || setsRes.error || topicsRes.error || progressRes.error || testsRes.error || trainingRes.error) {
+      throw new Error('Data fetch failed')
+    }
 
     allExercises.value = exercisesRes.data || []
     allTopics.value = topicsRes.data || []
     allWorkouts.value = workoutsRes.data || []
     allWorkoutSets.value = setsRes.data || []
-
-    // Map grammar progress to safely include passed/tested_at fallbacks in case column structures differ
-    allGrammarTests.value = (progressRes.data || []).map(p => ({
-      ...p,
-      passed: p.passed !== undefined ? p.passed : p.validated,
-      tested_at: p.tested_at || new Date().toISOString()
-    }))
-
+    allGrammarTests.value = testsRes.data || []
     allVocabularyLogs.value = vocabRes.data || []
     allOralSessions.value = oralRes.data || []
     allReadingLogs.value = readingRes.data || []
+    allGrammarTraining.value = trainingRes.data || []
 
     // Helper process for user
     const processUser = (name) => {
@@ -165,6 +167,7 @@ onMounted(async () => {
       const w = workoutsRes.data?.filter(isUser) || []
       const s = setsRes.data?.filter(isUserSet) || []
       const gp = progressRes.data?.filter(isUser) || []
+      const gt = trainingRes.data?.filter(isUser) || []
       const v = vocabRes.data?.filter(isUser) || []
       const o = oralRes.data?.filter(isUser) || []
       const r = readingRes.data?.filter(isUser) || []
@@ -211,7 +214,8 @@ onMounted(async () => {
         sportStats: { totalSessions, totalMinutes, weeklyFrequency: Math.round((totalSessions / Math.max(1, (new Date() - new Date('2024-01-01')) / (1000 * 60 * 60 * 24 * 7)))) || 0 },
         englishStats: { cefrLevel: highestCefr, validatedTopics: validatedTopicsCount, totalTopics: allTopics.value.length, totalWords, oralHours: Math.floor(oralMinutes / 60) },
         sets: s.map(set => ({ ...set, date: set.workouts?.date })),
-        grammarProgress: gp
+        grammarProgress: gp,
+        grammarTraining: gt
       }
     }
 
@@ -223,12 +227,14 @@ onMounted(async () => {
     clementEnglishStats.value = clementData.englishStats
     clementSets.value = clementData.sets
     clementGrammarProgress.value = clementData.grammarProgress
+    clementGrammarTraining.value = clementData.grammarTraining
 
     celioPoints.value = celioData.points
     celioSportStats.value = celioData.sportStats
     celioEnglishStats.value = celioData.englishStats
     celioSets.value = celioData.sets
     celioGrammarProgress.value = celioData.grammarProgress
+    celioGrammarTraining.value = celioData.grammarTraining
 
   } catch (err) {
     console.error(err)

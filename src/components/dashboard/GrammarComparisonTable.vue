@@ -17,8 +17,10 @@
           <th class="text-left" style="color: #D4C5A9;">Topic</th>
           <th class="text-center" style="color: #D4C5A9;">Clément</th>
           <th class="text-center" v-if="!isMobile" style="color: #D4C5A9;">Status</th>
+          <th class="text-center" v-if="!isMobile" style="color: #D4C5A9;">Training</th>
           <th class="text-center" style="color: #D4C5A9;">Celio</th>
           <th class="text-center" v-if="!isMobile" style="color: #D4C5A9;">Status</th>
+          <th class="text-center" v-if="!isMobile" style="color: #D4C5A9;">Training</th>
         </tr>
         </thead>
         <tbody>
@@ -32,6 +34,9 @@
             <v-icon v-if="topic.clement.validated" icon="mdi-check-circle" color="success" size="small"></v-icon>
             <span v-else class="text-iron">—</span>
           </td>
+          <td class="text-center text-iron" v-if="!isMobile">
+            {{ topic.clement.sessions > 0 ? `${topic.clement.sessions} sessions · ${topic.clement.minutes} min` : '—' }}
+          </td>
 
           <td class="text-center font-weight-bold" :class="'text-' + getScoreColor(topic.celio.score)">
             {{ topic.celio.score !== null ? topic.celio.score + '%' : '—' }}
@@ -39,6 +44,9 @@
           <td class="text-center" v-if="!isMobile">
             <v-icon v-if="topic.celio.validated" icon="mdi-check-circle" color="success" size="small"></v-icon>
             <span v-else class="text-iron">—</span>
+          </td>
+          <td class="text-center text-iron" v-if="!isMobile">
+            {{ topic.celio.sessions > 0 ? `${topic.celio.sessions} sessions · ${topic.celio.minutes} min` : '—' }}
           </td>
         </tr>
         </tbody>
@@ -48,6 +56,10 @@
 </template>
 
 <script setup>
+// Required props from parent component:
+// clementTraining → store.grammarTraining.filter(t => t.user_name === 'clement')
+// celioTraining   → store.grammarTraining.filter(t => t.user_name === 'celio')
+
 import { computed } from 'vue'
 import { useDisplay } from 'vuetify'
 import { cefrRanks } from '@/utils/cefrRanks'
@@ -55,7 +67,9 @@ import { cefrRanks } from '@/utils/cefrRanks'
 const props = defineProps({
   topics: { type: Array, required: true },
   clementProgress: { type: Array, required: true },
-  celioProgress: { type: Array, required: true }
+  celioProgress: { type: Array, required: true },
+  clementTraining: { type: Array, default: () => [] },
+  celioTraining: { type: Array, default: () => [] }
 })
 
 const { xs } = useDisplay()
@@ -78,12 +92,30 @@ const groupedTopics = computed(() => {
     const clemProg = props.clementProgress.find(p => p.topic_id === t.id) || { mastery_score: null, validated: false }
     const celProg = props.celioProgress.find(p => p.topic_id === t.id) || { mastery_score: null, validated: false }
 
+    // Filter training elements for current topic
+    const clemSessions = props.clementTraining.filter(tr => tr.topic_id === t.id)
+    const celSessions = props.celioTraining.filter(tr => tr.topic_id === t.id)
+
+    // Calculate aggregated metrics
+    const clemMinutes = clemSessions.reduce((sum, tr) => sum + (tr.duration || 0), 0)
+    const celMinutes = celSessions.reduce((sum, tr) => sum + (tr.duration || 0), 0)
+
     if (groups[t.cefr_level]) {
       groups[t.cefr_level].push({
         id: t.id,
         name: t.name,
-        clement: { score: clemProg.mastery_score, validated: clemProg.validated },
-        celio: { score: celProg.mastery_score, validated: celProg.validated }
+        clement: {
+          score: clemProg.mastery_score,
+          validated: clemProg.validated,
+          sessions: clemSessions.length,
+          minutes: clemMinutes
+        },
+        celio: {
+          score: celProg.mastery_score,
+          validated: celProg.validated,
+          sessions: celSessions.length,
+          minutes: celMinutes
+        }
       })
     }
   })

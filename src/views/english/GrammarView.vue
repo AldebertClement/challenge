@@ -20,15 +20,15 @@
 
     <template v-else>
       <RankTierSection
-          v-for="rank in cefrRanks"
+          v-for="rank in cefrRanksArray"
           :key="rank.level"
           :rank="rank"
           :topics="getTopicsByRank(rank.level)"
-          @open-test="openTestDialog"
+          @open-topic="openTopicDialog"
       />
     </template>
 
-    <TestScoreDialog
+    <TopicDetailDialog
         v-model="dialogVisible"
         :topic="selectedTopic"
     />
@@ -41,7 +41,7 @@ import { useEnglishStore } from '@/stores/english.store'
 import { useAuthStore } from '@/stores/auth.store'
 import { cefrRanks } from '@/utils/cefrRanks'
 import RankTierSection from '@/components/english/RankTierSection.vue'
-import TestScoreDialog from '@/components/english/TestScoreDialog.vue'
+import TopicDetailDialog from '@/components/english/TopicDetailDialog.vue'
 
 const store = useEnglishStore()
 const authStore = useAuthStore()
@@ -49,23 +49,33 @@ const authStore = useAuthStore()
 const dialogVisible = ref(false)
 const selectedTopic = ref(null)
 
-function getNormalizedUser() {
+const cefrRanksArray = computed(() => {
+  return ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'].map(level => ({
+    level,
+    ...cefrRanks[level]
+  }))
+})
+
+function getUser() {
   return (authStore.selectedProfile || '')
       .toLowerCase()
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
 }
 
-// Map progress and test history data reactively into grammar topics
+// Map progress, test history, and training data reactively into grammar topics
 const combinedTopics = computed(() => {
-  const currentUser = getNormalizedUser()
+  const currentUser = getUser()
   return store.grammarTopics.map(topic => {
     const progress = store.grammarProgress.find(p => p.topic_id === topic.id && p.user_name === currentUser)
     const tests = store.grammarTests.filter(t => t.topic_id === topic.id && t.user_name === currentUser)
+    const trainings = (store.grammarTraining || []).filter(tr => tr.topic_id === topic.id && tr.user_name === currentUser)
+
     return {
       ...topic,
       progress: progress || { mastery_score: 0, validated: false },
-      tests: tests || []
+      tests: tests || [],
+      trainings: trainings || []
     }
   })
 })
@@ -74,7 +84,7 @@ const getTopicsByRank = (level) => {
   return combinedTopics.value.filter(t => t.cefr_level === level)
 }
 
-const openTestDialog = (topic) => {
+const openTopicDialog = (topic) => {
   selectedTopic.value = topic
   dialogVisible.value = true
 }

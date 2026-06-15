@@ -123,13 +123,15 @@ import { medievalChartDefaults } from '@/utils/chartDefaults'
 const apexchart = VueApexCharts
 
 const props = defineProps({
-  exercises:      { type: Array, default: () => [] },
-  workouts:       { type: Array, default: () => [] },
-  workoutSets:    { type: Array, default: () => [] },
-  grammarTests:   { type: Array, default: () => [] },
-  vocabularyLogs: { type: Array, default: () => [] },
-  oralSessions:   { type: Array, default: () => [] },
-  readingLogs:    { type: Array, default: () => [] },
+  exercises:       { type: Array, default: () => [] },
+  workouts:        { type: Array, default: () => [] },
+  workoutSets:     { type: Array, default: () => [] },
+  grammarTests:    { type: Array, default: () => [] },
+  grammarTraining: { type: Array, default: () => [] },
+  grammarTopics:   { type: Array, default: () => [] },
+  vocabularyLogs:  { type: Array, default: () => [] },
+  oralSessions:    { type: Array, default: () => [] },
+  readingLogs:     { type: Array, default: () => [] },
 })
 
 const { xs } = useDisplay()
@@ -192,7 +194,7 @@ function computeArenaPointsSeries() {
 
     // Grammar
     props.grammarTests
-        .filter(t => t.user_name === user && t.passed && inRange(t.tested_at?.split('T')[0]))
+        .filter(t => t.user_name === user && t.score >= 80 && inRange(t.tested_at?.split('T')[0]))
         .forEach(t => {
           const d = t.tested_at.split('T')[0]
           pointsByDay[d] = (pointsByDay[d] || 0) + 30
@@ -308,6 +310,52 @@ function computeVocabularySeries() {
   return { series, categories: dates }
 }
 
+function computeGrammarSeries() {
+  const users = getUserFilter()
+  const series = []
+
+  users.forEach(user => {
+    const displayName = user === 'clement' ? 'Clément' : 'Celio'
+
+    // 1. Aggregate Tests (Highest Score per day)
+    const tests = props.grammarTests.filter(t =>
+        t.user_name === user && t.tested_at && inRange(t.tested_at.split('T')[0])
+    )
+    const testsByDate = {}
+    tests.forEach(t => {
+      const d = t.tested_at.split('T')[0]
+      if (!testsByDate[d] || t.score > testsByDate[d]) {
+        testsByDate[d] = t.score
+      }
+    })
+    const testData = Object.keys(testsByDate).sort().map(d => ({ x: d, y: testsByDate[d] }))
+
+    series.push({
+      name: `${displayName} – Test Scores`,
+      data: testData
+    })
+
+    // 2. Aggregate Training (Sum of minutes per day)
+    const training = props.grammarTraining.filter(tr =>
+        tr.user_name === user && tr.date && inRange(tr.date)
+    )
+    const trainingByDate = {}
+    training.forEach(tr => {
+      const d = tr.date
+      trainingByDate[d] = (trainingByDate[d] || 0) + tr.duration
+    })
+    const trainingData = Object.keys(trainingByDate).sort().map(d => ({ x: d, y: trainingByDate[d] }))
+
+    series.push({
+      name: `${displayName} – Training (min)`,
+      data: trainingData
+    })
+  })
+
+  const dates = [...new Set(series.flatMap(s => s.data.map(d => d.x)))].sort()
+  return { series, categories: dates }
+}
+
 function computeOralSeries() {
   const users = getUserFilter()
   const series = users.map(user => {
@@ -361,6 +409,7 @@ function recompute() {
     result = computeSportSeries()
   } else if (selectedCategory.value === 'english') {
     if (selectedSubFilter.value === 'vocabulary') result = computeVocabularySeries()
+    else if (selectedSubFilter.value === 'grammar-topic') result = computeGrammarSeries()
     else if (selectedSubFilter.value === 'oral')  result = computeOralSeries()
     else if (selectedSubFilter.value === 'reading') result = computeReadingSeries()
   }
@@ -372,6 +421,7 @@ function recompute() {
 watch(
     [selectedUser, selectedCategory, selectedSubFilter, selectedMetric, dateRange, dateFromRaw, dateToRaw,
       () => props.workouts, () => props.workoutSets, () => props.grammarTests,
+      () => props.grammarTraining, () => props.grammarTopics,
       () => props.vocabularyLogs, () => props.oralSessions, () => props.readingLogs],
     recompute,
     { immediate: true, deep: true }

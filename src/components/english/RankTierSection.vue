@@ -3,7 +3,7 @@
     <v-card :color="rank.color" dark class="mb-4 elevation-3 border-gold">
       <v-card-title class="text-h5 font-weight-bold d-flex align-center">
         <v-icon start :icon="rank.icon" class="mr-3"></v-icon>
-        {{ rank.level }} - {{ rank.title }}
+        {{ rank.level }} - {{ rank.title || rank.label }}
       </v-card-title>
     </v-card>
     <v-row>
@@ -14,7 +14,7 @@
       >
         <GrammarTopicCard
             :topic="topic"
-            @click="$emit('open-test', topic)"
+            @click="$emit('open-topic', topic)"
         />
       </v-col>
       <v-col v-if="!topics.length" cols="12">
@@ -33,7 +33,7 @@ defineProps({
   rank: { type: Object, required: true },
   topics: { type: Array, required: true }
 })
-defineEmits(['open-test'])
+defineEmits(['open-topic'])
 </script>
 
 <style scoped>

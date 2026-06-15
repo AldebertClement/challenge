@@ -6,6 +6,7 @@ export const useEnglishStore = defineStore('english', () => {
     const grammarTopics = ref([])
     const grammarProgress = ref([])
     const grammarTests = ref([])
+    const grammarTraining = ref([])
     const vocabularyLogs = ref([])
     const oralSessions = ref([])
     const readingBooks = ref([])
@@ -20,6 +21,14 @@ export const useEnglishStore = defineStore('english', () => {
         if (!error) grammarTests.value = data
     }
 
+    async function fetchGrammarTraining() {
+        const { data, error } = await supabase
+            .from('grammar_training')
+            .select('*')
+            .order('date', { ascending: false })
+        if (!error) grammarTraining.value = data
+    }
+
     async function fetchGrammarData() {
         loading.value = true
         const { data: topics, error: e1 } = await supabase.from('grammar_topics').select('*')
@@ -29,6 +38,7 @@ export const useEnglishStore = defineStore('english', () => {
         if (!e2) grammarProgress.value = progress
 
         await fetchGrammarTests()
+        await fetchGrammarTraining()
         loading.value = false
     }
 
@@ -68,6 +78,34 @@ export const useEnglishStore = defineStore('english', () => {
             .eq('topic_id', topicId)
         if (e2) throw e2
 
+        await fetchGrammarData()
+    }
+
+    async function addGrammarTraining(userName, topicId, date, duration, notes) {
+        const { error } = await supabase
+            .from('grammar_training')
+            .insert([{ user_name: userName, topic_id: topicId, date, duration: parseInt(duration), notes: notes || null }])
+        if (error) throw error
+        await fetchGrammarTraining()
+    }
+
+    async function updateGrammarTraining(id, updates) {
+        const { error } = await supabase.from('grammar_training').update(updates).eq('id', id)
+        if (error) throw error
+        await fetchGrammarTraining()
+    }
+
+    // Added userName argument and user_name filter to comply with Supabase RLS DELETE requirements
+    async function deleteGrammarTraining(id, userName) {
+        const { error } = await supabase.from('grammar_training').delete().eq('id', id).eq('user_name', userName)
+        if (error) throw error
+        await fetchGrammarTraining()
+    }
+
+    // Added userName argument and user_name filter to comply with Supabase RLS DELETE requirements
+    async function deleteGrammarTest(id, userName) {
+        const { error } = await supabase.from('grammar_tests').delete().eq('id', id).eq('user_name', userName)
+        if (error) throw error
         await fetchGrammarData()
     }
 
@@ -176,8 +214,10 @@ export const useEnglishStore = defineStore('english', () => {
     }
 
     return {
-        grammarTopics, grammarProgress, grammarTests, vocabularyLogs, oralSessions, readingBooks, readingLogs, loading,
-        fetchGrammarData, fetchGrammarTests, submitGrammarTest, deleteGrammarProgress, fetchVocabularyLogs, logVocabulary,
+        grammarTopics, grammarProgress, grammarTests, grammarTraining, vocabularyLogs, oralSessions, readingBooks, readingLogs, loading,
+        fetchGrammarData, fetchGrammarTests, fetchGrammarTraining, submitGrammarTest, deleteGrammarProgress, deleteGrammarTest,
+        addGrammarTraining, updateGrammarTraining, deleteGrammarTraining,
+        fetchVocabularyLogs, logVocabulary,
         fetchOralSessions, logOralSession, updateOralSession, deleteOralSession,
         fetchReadingData, updateReadingBook, logReadingWeek
     }
